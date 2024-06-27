@@ -93,13 +93,17 @@ public :
     virtual int get_peer_info(char *peer_name, int &peer_port);
 
     void        set_http_url(const char *http_url);
+    void        set_exec_command(const char *exec_cmd);
+
     int         on_connect();
     int         on_close();
     int         check_http_client();
     int         check_http_passed();
 
     void        set_record_hls_path(const char *hls_path);
-protected:
+
+    
+ protected:
     CSLSSrt     *m_srt;
     bool         m_is_write;//listener: 0, publisher: 0, player: 1
     int64_t      m_invalid_begin_tm;//
@@ -147,6 +151,9 @@ protected:
     void record_data2hls(char *data, int len);
     void check_hls_file();
     void close_hls_file();
+
+    char m_exec_command[URL_MAX_LEN];
+    int execute_command();
 private:
 
 };

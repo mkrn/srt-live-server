@@ -590,23 +590,61 @@ void  CSLSRole::set_http_url(const char *http_url)
 	}
 }
 
+void CSLSRole::set_exec_command(const char *exec_cmd)
+{
+    if (exec_cmd && strlen(exec_cmd) > 0) {
+        strcpy(m_exec_command, exec_cmd);
+    } else {
+        m_exec_command[0] = '\0';
+    }
+}
+
+
 int  CSLSRole::on_connect()
 {
-	if (strlen(m_http_url) == 0) {
-		return SLS_ERROR;
-	}
-	if (NULL == m_http_client) {
-		m_http_client = new CHttpClient;
-	}
+    int ret = SLS_OK;
+    
+    // Execute the command if set
+    if (strlen(m_exec_command) > 0) {
+         ret = execute_command();
+    }
 
-	char on_event_url[URL_MAX_LEN] = {0};
-	if (strlen(m_peer_ip) == 0) {
-		get_peer_info(m_peer_ip, m_peer_port);
-	}
-	sprintf(on_event_url, "%s?on_event=on_connect&role_name=%s&srt_url=%s&remote_ip=%s&remote_port=%d",
+    // Existing HTTP callback
+    if (strlen(m_http_url) > 0) {
+        if (NULL == m_http_client) {
+            m_http_client = new CHttpClient;
+        }
+        
+        char on_event_url[URL_MAX_LEN] = {0};
+        if (strlen(m_peer_ip) == 0) {
+            get_peer_info(m_peer_ip, m_peer_port);
+        }
+	    sprintf(on_event_url, "%s?on_event=on_connect&role_name=%s&srt_url=%s&remote_ip=%s&remote_port=%d",
 			m_http_url, m_role_name, get_streamid(), m_peer_ip, m_peer_port);
 
-	return m_http_client->open(on_event_url);
+	    return m_http_client->open(on_event_url);
+    }
+
+    return ret;
+}
+
+int CSLSRole::execute_command()
+{
+    char command[URL_MAX_LEN * 2] = {0};
+    if (strlen(m_peer_ip) == 0) {
+        get_peer_info(m_peer_ip, m_peer_port);
+    }
+    
+    snprintf(command, sizeof(command), m_exec_command, m_role_name, get_streamid(), m_peer_port);
+    
+    int ret = system(command);
+    if (ret != 0) {
+        sls_log(SLS_LOG_WARNING, "[%p]CSLSRole::execute_command, command execution failed: %s", this, command);
+        return SLS_ERROR;
+    }
+    
+    sls_log(SLS_LOG_INFO, "[%p]CSLSRole::execute_command, command executed successfully: %s", this, command);
+    return SLS_OK;
 }
 
 int  CSLSRole::on_close()
