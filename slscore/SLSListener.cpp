@@ -96,6 +96,7 @@ CSLSListener::CSLSListener()
     m_idle_streams_timeout_role = 0;
     m_stat_info = std::string("");
     memset(m_http_url_role, 0, URL_MAX_LEN);
+    memset(m_exec_command, 0, URL_MAX_LEN);
     memset(m_record_hls_path_prefix, 0, URL_MAX_LEN);
 
     sprintf(m_role_name, "listener");
@@ -176,6 +177,8 @@ int CSLSListener::init_conf_app()
     strcpy(m_http_url_role, conf_server->on_event_url);
     sls_log(SLS_LOG_INFO, "[%p]CSLSListener::init_conf_app, m_back_log=%d, m_idle_streams_timeout=%d.",
             this, m_back_log, m_idle_streams_timeout_role);
+        
+    strcpy(m_exec_command, conf_server->exec);
 
     //domain
     domain_players = sls_conf_string_split(string(conf_server->domain_player), string(" "));
@@ -467,6 +470,7 @@ int CSLSListener::handler()
 	    std::string stat_info = std::string(tmp);
 	    player->set_stat_info_base(stat_info);
 	    player->set_http_url(m_http_url_role);
+        player->set_exec_command(m_exec_command);
 	    player->on_connect();
 
 		m_list_role->push(player);
@@ -507,6 +511,7 @@ int CSLSListener::handler()
     std::string stat_info = std::string(tmp);
     pub->set_stat_info_base(stat_info);
     pub->set_http_url(m_http_url_role);
+    // pub->set_exec_command(m_exec_command);
     //set hls record path
     sprintf(tmp, "%s/%d/%s",
             m_record_hls_path_prefix, m_port, key_stream_name);
